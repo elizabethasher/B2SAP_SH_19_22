@@ -1,0 +1,263 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2761
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red0\green128\blue19;\red167\green9\blue245;\red14\green0\blue255;
+}
+{\*\expandedcolortbl;;\csgenericrgb\c0\c50196\c7451;\csgenericrgb\c65490\c3529\c96078;\csgenericrgb\c5490\c0\c100000;
+}
+\margl1440\margr1440\vieww24360\viewh16440\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs20 \cf0 \
+clear\
+dbs\
+\
+\cf2 % Lidar data\
+\cf0 load(\cf3 '/Users/abaron/Data/Lauder_Lidar/Lauder_aerosol_lidar_forPOPS_2019_23.mat'\cf0 )\
+\
+\cf2 % POPS data\
+\cf0 load(\cf3 '/Users/abaron/Documents/MATLAB/AustralianFires2019/Data/POPS_ext_Lauder_2019-2022.mat'\cf0 )\
+\
+\
+up = [15 13 20 40 20 17 10 10 25];\
+\
+\
+tl = dateshift(t,\cf3 "start"\cf0 ,\cf3 "day"\cf0 );\
+\
+\cf4 for \cf0 i = 1:length(tp)\
+    [d(i),id(i)] = min(abs(tl-tp(i)));\
+\cf4 end\
+\
+\cf0 savefigure = 1;\
+\
+lr = [46 46 46 97 97 46 46 46 46].*ones(size(z,1),9);\
+lr(z(:,id(3))<18 & z(:,id(3))>15,3) = 46;\
+\
+\
+\
+\cf4 for \cf0 i = 1:length(tp)\
+\
+    lx = lr(:,i)./46.*1e3.*a532(:,id(i));\
+    ly = z(:,id(i));\
+\
+    slx1 = (lr(:,i)+15)./46.*1e3.*a532(:,id(i));\
+    slx2 = (lr(:,i)-15)./46.*1e3.*a532(:,id(i));\
+    slx = [slx1 ;flipud(slx2)];\
+    szl = [ly ; flipud(ly)];\
+\
+    spx1 = extp(:,i) + up(i).*extp(:,i)./100;\
+    spx2 = extp(:,i) - up(i).*extp(:,i)./100;\
+    spx = [spx1 ;flipud(spx2)];\
+    szp = [zp ; flipud(zp)];\
+\
+    spx(spx<=0) = 1e-6;\
+    slx(slx<=0) = 1e-6;\
+\
+    figur(\cf3 'p'\cf0 )\
+    ax = axe;\
+    pa = patch(slx(~isnan(slx) & ~isnan(szl)),szl(~isnan(slx) & ~isnan(szl)),\cf3 'b'\cf0 );\
+    pa.EdgeColor = \cf3 'none'\cf0 ;\
+    pa.FaceAlpha = 0.3;\
+    pa.DisplayName = [\cf3 'LR = ' \cf0 num2str(lr(1,i)) \cf3 ' ' \cf0 char(177) \cf3 ' 15 sr'\cf0 ];\
+    plot(lx,ly,\cf3 'b--'\cf0 ,\cf3 'LineWidth'\cf0 ,3,\cf3 'DisplayName'\cf0 ,strcat(\cf3 "Lidar - "\cf0 , datestr(tl(id(i)))))\
+    pa = patch(spx(~isnan(spx)),szp(~isnan(spx)),\cf3 'r'\cf0 );\
+    pa.EdgeColor = \cf3 'none'\cf0 ;\
+    pa.FaceAlpha = 0.3;\
+    pa.DisplayName = [\cf3 'Uncertainty - ' \cf0 num2str(up(i)) \cf3 '%'\cf0 ];\
+\
+    plot(extp(:,i),zp,\cf3 'r'\cf0 ,\cf3 'LineWidth'\cf0 ,3,\cf3 'DisplayName'\cf0 ,strcat(\cf3 "POPS - "\cf0 , datestr(tp(i))))\
+    \cf2 % xlabel('Aerosol extinction at 532 nm (km^\{-1\})')\
+\cf0     \cf2 %     ylabel('Altitude (km)')\
+\cf0     xlim([0 1])\
+    ax.XScale = \cf3 'log'\cf0 ;\
+    legend\
+    ylim([12 25])\
+    xlim([2e-5 5e-1])\
+    ax.FontSize = 28;\
+\
+    extl(:,i) = interp1(z(~isnan(a532(:,id(i))),id(i)),lr(~isnan(a532(:,id(i))),i)./46.*1e3.*a532(~isnan(a532(:,id(i))),id(i)),zp);\
+    dumy = interp1(z(~isnan(a532(:,id(i))),id(i)),(lr(~isnan(a532(:,id(i))),i)+15)./46.*1e3.*a532(~isnan(a532(:,id(i))),id(i)),zp);\
+    sextl(:,i) = dumy - extl(:,i);\
+\
+    \cf4 if \cf0 savefigure == 1\
+        psfigp = strcat(\cf3 '/Users/abaron/Documents/MATLAB/AustralianFires2019/Figures/'\cf0 ,datestr(tp(i),29));\
+        print(psfigp,\cf3 '-dpng'\cf0 ,\cf3 '-r100'\cf0 )\
+    \cf4 end\
+\
+end\
+\
+\
+\cf2 % for i = 1:length(tp)\
+% \
+%     lx = 1e3.*a532(:,id(i))./46;\
+%     ly = z(:,id(i));\
+% \
+% \
+% \
+%     figur('p')\
+%     ax = axe;\
+% \
+%     plot(lx,ly,'b--','LineWidth',3,'DisplayName',strcat("Lidar - ", datestr(tl(id(i)))))\
+% \
+% \
+%     plot(bsc(:,i),zp,'r','LineWidth',3,'DisplayName',strcat("POPS - ", datestr(tp(i))))\
+%     %     xlabel('Aerosol extinction at 532 nm (km^\{-1\})')\
+%     %     ylabel('Altitude (km)')\
+%     xlim([0 1])\
+%     ax.XScale = 'log';\
+%     legend\
+%     ylim([12 25])\
+%     %xlim([5e-6 1e-1])\
+%     ax.FontSize = 28;\
+% \
+% end\
+\
+\cf0 [RMSD,RMSE,B,C,MAE,mx,my,stx,sty] = f_Stat(extp,extl,2);\
+\
+iz = zp>12;\
+\
+bp = 200.*(B./(mx+my));\
+\
+\
+figur(\cf3 'p'\cf0 )\
+ax1 = axe;\
+plot(bp(iz),zp(iz),\cf3 'r'\cf0 ,\cf3 'LineWidth'\cf0 ,3)\
+xlabel(ax1,\cf3 'Bias (%)'\cf0 )\
+ax1.XColor = \cf3 'r'\cf0 ;\
+ylim(ax1,[12 25])\
+ylabel(ax1,\cf3 'Altitude (km)'\cf0 )\
+\
+\
+figur(\cf3 'p'\cf0 )\
+ax = axe;\
+plot(mx(iz),zp(iz),\cf3 'b-'\cf0 ,\cf3 'LineWidth'\cf0 ,3,\cf3 'Color'\cf0 ,[0 0 0 .9])\
+plot(my(iz),zp(iz),\cf3 'r--'\cf0 ,\cf3 'LineWidth'\cf0 ,3,\cf3 'Color'\cf0 ,[0 0 0 .9])\
+plot(extp(iz,:),zp(iz),\cf3 'b-'\cf0 ,\cf3 'LineWidth'\cf0 ,1,\cf3 'Color'\cf0 ,[0 0 0 .3])\
+plot(extl(iz,:),zp(iz),\cf3 'r--'\cf0 ,\cf3 'LineWidth'\cf0 ,1,\cf3 'Color'\cf0 ,[0 0 0 .3])\
+\
+\cf2 % xlabel(ax,'Extinction at 532 nm (km^\{-1\})')\
+\cf0 ylim(ax,[12 25])\
+xlim([1e-5 5e-1])\
+\cf2 %ylabel(ax,'Altitude (km)')\
+\cf0 ax.XScale = \cf3 'log'\cf0 ;\
+legend([\cf3 "POPS - Average" \cf0 ; \cf3 "Lidar - average" \cf0 ])\
+\cf2 %legend(["POPS - Average" ; "Lidar - average" ; string(datestr(tp)) ; string(datestr(tl(id)))])\
+\cf0 ax.FontSize = 28;\
+\
+psfigp = strcat(\cf3 '/Users/abaron/Documents/MATLAB/AustralianFires2019/Figures/Allprofiles'\cf0 );\
+print(psfigp,\cf3 '-dpng'\cf0 ,\cf3 '-r100'\cf0 )\
+\
+figur(\cf3 'p'\cf0 )\
+ax1 = axe;\
+plot(C(iz),zp(iz),\cf3 'r'\cf0 ,\cf3 'LineWidth'\cf0 ,3)\
+xlabel(ax1,\cf3 'Correlation'\cf0 )\
+ax1.XColor = \cf3 'r'\cf0 ;\
+ylim(ax1,[12 25])\
+ylabel(ax1,\cf3 'Altitude (km)'\cf0 )\
+\
+ax2 = axe;\
+ax2.Color = \cf3 'none'\cf0 ;\
+plot(RMSD(iz),zp(iz),\cf3 'g'\cf0 ,\cf3 'LineWidth'\cf0 ,3)\
+ax2.XColor = \cf3 'g'\cf0 ;\
+ax2.XAxisLocation = \cf3 'top'\cf0 ;\
+xlabel(ax2,\cf3 'RMSD'\cf0 )\
+ylim(ax2,[12 25])\
+\
+ax3 = axe;\
+ax3.Color = \cf3 'none'\cf0 ;\
+plot(B(iz),zp(iz),\cf3 'b'\cf0 ,\cf3 'LineWidth'\cf0 ,3)\
+ax3.XAxis.Visible = \cf3 'off'\cf0 ;\
+ylim(ax3,[12 25])\
+xlim(ax3,2e-2.*[-1 1])\
+\
+ax4 = axe;\
+ax4.Color = \cf3 'none'\cf0 ;\
+ax4.Position(2) = ax1.Position(2)-0.055;\
+box \cf3 off\
+\cf0 grid \cf3 off\
+\cf0 ax4.YAxis.Visible = \cf3 'off'\cf0 ;\
+ax4.XColor = \cf3 'b'\cf0 ;\
+xlim(ax4,2e-2.*[-1 1])\
+xlabel(ax4,\cf3 'Bias (km^\{-1\})'\cf0 )\
+\
+psfigp = strcat(\cf3 '/Users/abaron/Documents/MATLAB/AustralianFires2019/Figures/Stats'\cf0 );\
+print(psfigp,\cf3 '-dpng'\cf0 ,\cf3 '-r100'\cf0 )\
+\
+\
+figur\
+ax = axe;\
+plot(extp(iz,:),extl(iz,:),\cf3 '.'\cf0 ,\cf3 'MarkerSize'\cf0 ,50)\
+ax.XScale = \cf3 'log'\cf0 ;\
+ax.YScale = \cf3 'log'\cf0 ;\
+xlim([1e-5 .1])\
+ylim([1e-5 .1])\
+\
+\cf4 for \cf0 i = 1:length(t)\
+    exttl(:,i) = f_vertresample(z(:,i),1e3.*a532(:,i),zp);\
+\cf4 end\
+\
+\
+\cf0 figur\
+ax = axe;\
+plot(t,0.25.*sum(exttl(iz,:),\cf3 'omitnan'\cf0 ),\cf3 'Marker'\cf0 ,\cf3 'pentagram'\cf0 ,\cf3 'MarkerFaceColor'\cf0 ,\cf3 'g'\cf0 ,\cf3 'MarkerSize'\cf0 ,20)\
+plot(tp,0.25.*sum(extp(iz,:),\cf3 'omitnan'\cf0 ),\cf3 'Marker'\cf0 ,\cf3 'diamond'\cf0 ,\cf3 'MarkerFaceColor'\cf0 ,\cf3 'k'\cf0 ,\cf3 'MarkerSize'\cf0 ,20)\
+ylabel(\cf3 'SAOD 12-25km'\cf0 )\
+legend(\cf3 'Lidar'\cf0 ,\cf3 'POPS'\cf0 )\
+ax.YScale = \cf3 'log'\cf0 ;\
+\
+\
+figur\
+ax = axe;\
+plot(tp,0.25.*sum(extl(iz,:),\cf3 'omitnan'\cf0 ),\cf3 'Marker'\cf0 ,\cf3 'pentagram'\cf0 ,\cf3 'MarkerFaceColor'\cf0 ,\cf3 'g'\cf0 ,\cf3 'MarkerSize'\cf0 ,20)\
+plot(tp,0.25.*sum(extp(iz,:),\cf3 'omitnan'\cf0 ),\cf3 'Marker'\cf0 ,\cf3 'diamond'\cf0 ,\cf3 'MarkerFaceColor'\cf0 ,\cf3 'k'\cf0 ,\cf3 'MarkerSize'\cf0 ,20)\
+ylabel(\cf3 'SAOD 12-25km'\cf0 )\
+legend(\cf3 'Lidar'\cf0 ,\cf3 'POPS'\cf0 )\
+ax.YScale = \cf3 'log'\cf0 ;\
+\
+\
+\
+\
+ms = 25.*[10 10 10 10 15 10 10 10 10];\
+ma = \{\cf3 '<'\cf0 ;\cf3 '>'\cf0 ;\cf3 '^'\cf0 ;\cf3 's'\cf0 ;\cf3 'p'\cf0 ;\cf3 'd'\cf0 ;\cf3 'o'\cf0 ;\cf3 'v'\cf0 ;\cf3 'x'\cf0 \};\
+\
+figur\
+ax = axe;\
+\cf4 for \cf0 i = 1:length(tp)\
+    sc = scatter(extp(iz,i),extl(iz,i),ms(i),zp(iz),\cf3 'filled'\cf0 );\
+    sc.Marker = ma\{i\};\
+\cf4 end\
+\cf0 colormap(f_cmap(360,12))\
+col = colorbar;\
+col.Label.String = \cf3 "Altitude (km)"\cf0 ;\
+xlabel(\cf3 'POPS Extinction at 532 nm (km^\{-1\})'\cf0 )\
+ylabel(\cf3 'Lidar Extinction at 532 nm (km^\{-1\})'\cf0 )\
+ax.XScale = \cf3 'log'\cf0 ;\
+ax.YScale = \cf3 'log'\cf0 ;\
+xlim([1e-5 .1])\
+ylim([1e-5 .1])\
+clim([12 25])\
+legend(string(tp))\
+\
+\
+Tl = array2table(extl);\
+sTl = array2table(sextl);\
+\
+T = [table(zp) Tl sTl];\
+T.Properties.VariableNames = [\cf3 "Altitude AMSL (km)"\cf0 ,cellstr(tl(id)),cellstr(strcat(repmat(\cf3 "Unc. - "\cf0 ,9,1),string(datestr(tl(id)))))'];\
+\
+writetable(T,\cf3 '/Users/abaron/Data/Lauder_Lidar/Lauder_aerosol_lidar532_POPSdates_2019_22.csv'\cf0 )\
+\
+Tl = array2table(exttl);\
+T = [table(zp) Tl];\
+T.Properties.VariableNames = [\cf3 "Altitude AMSL (km)"\cf0 ,cellstr(tl),];\
+\
+writetable(T,\cf3 '/Users/abaron/Data/Lauder_Lidar/Lauder_aerosol_lidar532_POPSdates+_2019_22.csv'\cf0 )\
+\
+\
+\
+figur\
+ax = axe;\
+ax.XScale = \cf3 'log'\cf0 ;\
+plot(extp,zp)\
+plot(extl,zp)\
+legend(datestr(tp))\
+}
